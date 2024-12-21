@@ -1,4 +1,4 @@
-from './api.py' import start
+from api import start
 
 if __name__ == '__main__':
     start()
