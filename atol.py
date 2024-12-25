@@ -21,20 +21,29 @@ class Atol:
         self.fptr.close()
 
     def jsonCmd(self, cmd):
-        try:
-            self.fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, json.dumps(cmd))
-            self.fptr.validateJson()
-            self.fptr.processJson()
-            result = self.fptr.getParamString(IFptr.LIBFPTR_PARAM_JSON_DATA)
-            return result
-        except:
-            return 'Error'
+        self.fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, json.dumps(cmd))
+        self.fptr.validateJson()
+
+        self.fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, json.dumps(cmd))
+        self.fptr.processJson()
+
+        result = self.fptr.getParamString(IFptr.LIBFPTR_PARAM_JSON_DATA)
+        return result
+
+    def getFnInfo(self, cmd):
+        self.fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, json.dumps(cmd))
+        self.fptr.validateJson()
+
+        self.fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, json.dumps(cmd))
+        self.fptr.processJson()
+
+        return json.loads(self.fptr.getParamString(IFptr.LIBFPTR_PARAM_JSON_DATA))
 
     def info(self):
         version = self.fptr.version()
         isOpened = self.fptr.isOpened()
-        settings = json.dumps(self.fptr.getSettings(), indent=4)
-        return JsonCmdResponse( version, isOpened, settings)
+        settings = self.fptr.getSettings()
+        return JsonCmdResponse(version, isOpened, settings)
 
     def getModel(self):
         self.fptr.setParam(IFptr.LIBFPTR_PARAM_DATA_TYPE, IFptr.LIBFPTR_DT_MODEL_INFO)

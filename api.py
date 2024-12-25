@@ -18,7 +18,8 @@ def routes():
                 '</br>'
                 f'<div><a href="{address}/init">init</a></div>'
                 f'<div><a href="{address}/model">model KKT</a></div>'
-                f'<div><a href="{address}/jsonCmd">json cmd</a></div>'
+                f'<div><a href="{address}/jsonCmd">open session</a></div>'
+                f'<div><a href="{address}/getFnInfo">getFnInfo</a></div>'
                 )
 
     @app.route('/model')
@@ -44,6 +45,13 @@ def routes():
     def jsonCmd():
         atol = Atol()
         result = atol.jsonCmd({"type": "openShift"})
+        atol.close()
+        return result
+
+    @app.route('/getFnInfo')
+    def getFnStatus():
+        atol = Atol()
+        result = atol.getFnInfo({"type": "getFnInfo"})
         atol.close()
         return result
 
