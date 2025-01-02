@@ -1,12 +1,14 @@
+import sys
+
 from flask import Flask
 from atol import Atol
 
-app = Flask(__name__)
+flaskApp = Flask(__name__)
 
 address = 'http://127.0.0.1:5000'
 
-def routes():
-    @app.route('/')
+def flaskRoutes():
+    @flaskApp.route('/')
     def default():
         atol = Atol()
         res = atol.info()
@@ -22,7 +24,7 @@ def routes():
                 f'<div><a href="{address}/getFnInfo">getFnInfo</a></div>'
                 )
 
-    @app.route('/model')
+    @flaskApp.route('/model')
     def model():
         atol = Atol()
         model = atol.getModel()
@@ -41,24 +43,25 @@ def routes():
     #     except:
     #         return 'Error'
 
-    @app.route('/jsonCmd')
-    def jsonCmd():
+    @flaskApp.route('/jsonCmd')
+    def json_cmd():
         atol = Atol()
         result = atol.jsonCmd({"type": "openShift"})
         atol.close()
         return result
 
-    @app.route('/getFnInfo')
-    def getFnStatus():
+    @flaskApp.route('/getFnInfo')
+    def get_fn_status():
         atol = Atol()
         result = atol.getFnInfo({"type": "getFnInfo"})
         atol.close()
         return result
 
 
-def start():
-    routes()
-    app.run(debug=True)
+def flask_start():
+    flaskRoutes()
+    flaskApp.run()
+    # sys.exit(flaskApp.run(debug=True))
 
 
 
