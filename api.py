@@ -1,5 +1,4 @@
 import sys
-
 from flask import Flask
 from atol import Atol
 
@@ -11,7 +10,11 @@ def flaskRoutes():
     @flaskApp.route('/')
     def default():
         atol = Atol()
+
         res = atol.info()
+        model = atol.getModel()
+        fn_info = atol.getFnInfo()
+
         atol.close()
         return (f'<div>Atol Web Server started</div> '
                 f'<div>version: {res.version}</div>'
@@ -19,29 +22,20 @@ def flaskRoutes():
                 f'<div><p>{res.settings}</p></div>'
                 '</br>'
                 f'<div><a href="{address}/init">init</a></div>'
-                f'<div><a href="{address}/model">model KKT</a></div>'
-                f'<div><a href="{address}/jsonCmd">open session</a></div>'
-                f'<div><a href="{address}/getFnInfo">getFnInfo</a></div>'
+                f'<div>model KKT: {model.name}</div>'
+                f'<div>fnInfo: {fn_info}</div>'
                 )
 
-    @flaskApp.route('/model')
-    def model():
-        atol = Atol()
-        model = atol.getModel()
-        atol.close()
-
-        return (f'<div>Atol Web Server</div>'
-                f'<div>model: {model.model}</div>'
-                f'<div>modelName: {model.name}</div>'
-                f'<div>firmwareVersion: {model.firmwareVersion}</div>'
-                )
-
-    # @app.route('/init')
-    # def init():
-    #     try:
-    #         return 'Ok' if atol.init() else 'Not connection'
-    #     except:
-    #         return 'Error'
+    # Инициализация драйвера, возвращает статус подключения к ККТ
+    @flaskApp.route('/init')
+    def init():
+        try:
+            atol = Atol()
+            res = 'Ok' if atol.init() else 'Not connection'
+            atol.close()
+            return res
+        except Exception:
+            return f'Error {Exception}'
 
     @flaskApp.route('/jsonCmd')
     def json_cmd():
@@ -50,18 +44,9 @@ def flaskRoutes():
         atol.close()
         return result
 
-    @flaskApp.route('/getFnInfo')
-    def get_fn_status():
-        atol = Atol()
-        result = atol.getFnInfo({"type": "getFnInfo"})
-        atol.close()
-        return result
-
-
 def flask_start():
     flaskRoutes()
-    flaskApp.run()
-    # sys.exit(flaskApp.run(debug=True))
+    sys.exit(flaskApp.run(debug=True))
 
 
 

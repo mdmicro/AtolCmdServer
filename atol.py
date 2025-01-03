@@ -30,7 +30,8 @@ class Atol:
         result = self.fptr.getParamString(IFptr.LIBFPTR_PARAM_JSON_DATA)
         return result
 
-    def getFnInfo(self, cmd):
+    def getFnInfo(self):
+        cmd = {"type": "getFnInfo"}
         self.fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, json.dumps(cmd))
         self.fptr.validateJson()
 
