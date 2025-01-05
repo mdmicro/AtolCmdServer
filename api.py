@@ -46,7 +46,7 @@ def flaskRoutes():
 
 def flask_start():
     flaskRoutes()
-    sys.exit(flaskApp.run(debug=True))
+    sys.exit(flaskApp.run())
 
 
 
