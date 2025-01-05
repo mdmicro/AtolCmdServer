@@ -21,14 +21,17 @@ class Atol:
         self.fptr.close()
 
     def jsonCmd(self, cmd):
-        self.fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, json.dumps(cmd))
-        self.fptr.validateJson()
+        try:
+            self.fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, json.dumps(cmd))
+            self.fptr.validateJson()
 
-        self.fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, json.dumps(cmd))
-        self.fptr.processJson()
+            self.fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, json.dumps(cmd))
+            self.fptr.processJson()
 
-        result = self.fptr.getParamString(IFptr.LIBFPTR_PARAM_JSON_DATA)
-        return result
+            data = self.fptr.getParamString(IFptr.LIBFPTR_PARAM_JSON_DATA)
+            return JsonCmdResponse(data, '')
+        except Exception:
+            return JsonCmdResponse('', Exception)
 
     def getFnInfo(self):
         cmd = {"type": "getFnInfo"}
@@ -44,7 +47,7 @@ class Atol:
         version = self.fptr.version()
         isOpened = self.fptr.isOpened()
         settings = self.fptr.getSettings()
-        return JsonCmdResponse(version, isOpened, settings)
+        return InfoCmdResponse(version, isOpened, settings)
 
     def getModel(self):
         self.fptr.setParam(IFptr.LIBFPTR_PARAM_DATA_TYPE, IFptr.LIBFPTR_DT_MODEL_INFO)
@@ -71,6 +74,11 @@ class Atol:
             return self.connect()
 
 JsonCmdResponse = namedtuple('JsonCmdResponse', [
+    'data',
+    'error'
+])
+
+InfoCmdResponse = namedtuple('JsonCmdResponse', [
     'version',
     'isOpened',
     'settings'
