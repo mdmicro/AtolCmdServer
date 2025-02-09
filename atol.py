@@ -7,41 +7,40 @@ from libs.libfptr10 import IFptr
 class Atol:
     def __init__(self):
         self.fptr = IFptr()
-        self.init()
 
     def connect(self):
         for i in range(10):
             if self.fptr.isOpened():
                 return True
-            time.sleep(1)
+            # time.sleep(1)
             self.fptr.open()
         return False
 
     def close(self):
         self.fptr.close()
 
-    def jsonCmd(self, cmd):
+    # data:
+    # {uuid, request }
+    def jsonCmd(self, data, uuid,):
+        error = ''
         try:
-            self.fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, json.dumps(cmd))
-            self.fptr.validateJson()
+            cmd = json.dumps(data)
 
-            self.fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, json.dumps(cmd))
+            self.fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, cmd)
+            self.fptr.validateJson()
+            self.fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, cmd)
             self.fptr.processJson()
 
-            data = self.fptr.getParamString(IFptr.LIBFPTR_PARAM_JSON_DATA)
-            return JsonCmdResponse(data, '')
+            response = self.fptr.getParamString(IFptr.LIBFPTR_PARAM_JSON_DATA)
+            return JsonCmdResponse(data = response, uuid = uuid, error = error)
         except Exception:
-            return JsonCmdResponse('', Exception)
+            return JsonCmdResponse('', '',Exception)
 
     def getFnInfo(self):
-        cmd = {"type": "getFnInfo"}
-        self.fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, json.dumps(cmd))
-        self.fptr.validateJson()
-
-        self.fptr.setParam(IFptr.LIBFPTR_PARAM_JSON_DATA, json.dumps(cmd))
-        self.fptr.processJson()
-
-        return json.loads(self.fptr.getParamString(IFptr.LIBFPTR_PARAM_JSON_DATA))
+        req = {"type": "getFnInfo"}
+        data = {'request': req, 'uuid': None}
+        res = self.jsonCmd(data)
+        return json.load(res.data) if res.data else None
 
     def info(self):
         version = self.fptr.version()
@@ -73,19 +72,6 @@ class Atol:
             # fptr.showProperties()
             return self.connect()
 
-JsonCmdResponse = namedtuple('JsonCmdResponse', [
-    'data',
-    'error'
-])
-
-InfoCmdResponse = namedtuple('JsonCmdResponse', [
-    'version',
-    'isOpened',
-    'settings'
-])
-
-ModelResponse = namedtuple('Model', [
-    'model',
-    'name',
-    'firmwareVersion'
-])
+JsonCmdResponse = namedtuple('JsonCmdResponse', ['data', 'uuid', 'error'])
+InfoCmdResponse = namedtuple('InfoCmdResponse', ['version', 'isOpened', 'settings'])
+ModelResponse = namedtuple('ModelResponse', ['model', 'name', 'firmwareVersion'])

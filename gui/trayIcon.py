@@ -5,6 +5,9 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWid
     QMenu, QAction, qApp
 from PyQt5.QtCore import QSize
 
+from named_tuple import msgConnect
+
+
 class MainWindow(QMainWindow):
     """
         Объявление чекбокса и иконки системного трея.
@@ -13,11 +16,15 @@ class MainWindow(QMainWindow):
     # check_box = None
     tray_icon = None
     is_show = False
+    queue = None
 
     # Переопределяем конструктор класса
-    def __init__(self):
+    def __init__(self, queue):
         # Обязательно нужно вызвать метод супер класса
         QMainWindow.__init__(self)
+
+        self.queue = queue
+        msg = self.queue.get()
 
         self.setMinimumSize(QSize(800, 280))  # Устанавливаем размеры
         self.setWindowTitle("Настройки")  # Устанавливаем заголовок окна
@@ -26,7 +33,7 @@ class MainWindow(QMainWindow):
 
         grid_layout = QGridLayout(self)  # Создаём QGridLayout
         central_widget.setLayout(grid_layout)  # Устанавливаем данное размещение в центральный виджет
-        # grid_layout.addWidget(QLabel("Application, which can minimize to Tray", self), 0, 0)
+        # grid_layout.addWidget(QLabel("", self), 0, 0)
 
         # Добавляем чекбокс, от которого будет зависеть поведение программы при закрытии окна
         # self.check_box = QCheckBox('Minimize to Tray')
@@ -36,7 +43,11 @@ class MainWindow(QMainWindow):
         # Инициализируем QSystemTrayIcon
         self.tray_icon = QSystemTrayIcon(self)
         # self.tray_icon.setIcon(self.style().standardIcon(QStyle.SP_ComputerIcon))
-        self.tray_icon.setIcon(QIcon("icon\cashRegister.png"))
+
+        if msg[0].status: # todo rework
+            self.tray_icon.setIcon(QIcon("icon\cashRegister.png"))
+        else:
+            self.tray_icon.setIcon(QIcon("icon\cashRegisterBW.png"))
 
         '''
             Объявим и добавим действия для работы с иконкой системного трея
@@ -63,11 +74,12 @@ class MainWindow(QMainWindow):
             if self.is_show:
                 self.hide()
             else:
+                # self.tray_icon.showMessage(f"{self.queue.get()}", QSystemTrayIcon.Information, 2000)
                 self.show()
             self.is_show = not self.is_show
 
     # Переопределение метода closeEvent, для перехвата события закрытия окна
-    # Окно будет закрываться только в том случае, если нет галочки в чекбоксе
+    # Окно будет закрываться только в том случае, если нет галочки в чек-боксе
     def closeEvent(self, event):
         # if self.check_box.isChecked():
             event.ignore()
@@ -75,9 +87,11 @@ class MainWindow(QMainWindow):
             self.is_show = False
             # self.tray_icon.showMessage("Tray Program", "Application was minimized to Tray", QSystemTrayIcon.Information, 2000)
 
-def qt_start():
+def qt_start(queue):
     app = QApplication(sys.argv)
-    mw = MainWindow()
+    mw = MainWindow(queue)
+    # mw.queue = queue
+
     # mw.show()
     # системный выход с кодом, который вернет app.exec()
     sys.exit(app.exec())
