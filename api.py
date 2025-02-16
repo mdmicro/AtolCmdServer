@@ -2,11 +2,8 @@ import json
 import sys
 from collections import namedtuple
 from datetime import datetime
-from xmlrpc.client import DateTime
-
 from flask import Flask, request, jsonify
 from atol import Atol
-from named_tuple import msgConnect
 
 flaskApp = Flask(__name__)
 SERVER_PORT = 16732
