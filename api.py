@@ -10,7 +10,6 @@ from named_tuple import msgConnect
 
 flaskApp = Flask(__name__)
 SERVER_PORT = 16732
-SERVER_URL = 'http://127.0.0.1' + ':' + str(SERVER_PORT) + '/'
 
 def flaskRoutes(queue):
     cmd_responses_atol = dict()
@@ -33,7 +32,6 @@ def flaskRoutes(queue):
                         f'<div>opened: {res.isOpened}</div>'
                         f'<div><p>{res.settings}</p></div>'
                         '</br>'
-                        f'<div><a href="{SERVER_URL}/init">init</a></div>'
                         f'<div>model KKT: {model.name}</div>'
                         # f'<div>fnInfo: {fn_info}</div>'
                         )
@@ -131,15 +129,7 @@ def flaskRoutes(queue):
 
 def flask_start(queue):
     flaskRoutes(queue)
-
-    # передадим в gui статус подключения ККТ
-    atol = Atol()
-    status = atol.init()
-    atol.close()
-    queue.put([msgConnect(status)])
-
     sys.exit(flaskApp.run(port=16732))
-
 
     #  * постановка команды в очередь ККТ и ожидание результата выполнения
 	#  *

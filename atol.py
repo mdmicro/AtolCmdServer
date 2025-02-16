@@ -19,9 +19,8 @@ class Atol:
     def close(self):
         self.fptr.close()
 
-    # data:
     # {uuid, request }
-    def jsonCmd(self, data, uuid,):
+    def jsonCmd(self, data, uuid = None):
         error = ''
         try:
             cmd = json.dumps(data)

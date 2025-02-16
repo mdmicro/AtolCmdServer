@@ -23,22 +23,16 @@ class MainWindow(QMainWindow):
         # Обязательно нужно вызвать метод супер класса
         QMainWindow.__init__(self)
 
-        self.queue = queue
-        msg = self.queue.get()
-
-        self.setMinimumSize(QSize(800, 280))  # Устанавливаем размеры
-        self.setWindowTitle("Настройки")  # Устанавливаем заголовок окна
-        central_widget = QWidget(self)  # Создаём центральный виджет
-        self.setCentralWidget(central_widget)  # Устанавливаем центральный виджет
-
-        grid_layout = QGridLayout(self)  # Создаём QGridLayout
-        central_widget.setLayout(grid_layout)  # Устанавливаем данное размещение в центральный виджет
-        # grid_layout.addWidget(QLabel("", self), 0, 0)
-
         # Добавляем чекбокс, от которого будет зависеть поведение программы при закрытии окна
         # self.check_box = QCheckBox('Minimize to Tray')
         # grid_layout.addWidget(self.check_box, 1, 0)
         # grid_layout.addItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Expanding), 2, 0)
+
+        # добавить Кнопку
+        # btn = QPushButton('Обновить состояние',self)
+        # btn.resize(btn.sizeHint())
+        # btn.move(20,20)
+        # btn.clicked.connect(self.on_click_update)
 
         # Инициализируем QSystemTrayIcon
         self.tray_icon = QSystemTrayIcon(self)
@@ -49,12 +43,6 @@ class MainWindow(QMainWindow):
         else:
             self.tray_icon.setIcon(QIcon("icon\cashRegisterBW.png"))
 
-        '''
-            Объявим и добавим действия для работы с иконкой системного трея
-            show - показать окно
-            hide - скрыть окно
-            exit - выход из программы
-        '''
         show_action = QAction("Настройки", self)
         quit_action = QAction("Выход", self)
         # hide_action = QAction("Скрыть", self)
@@ -79,7 +67,6 @@ class MainWindow(QMainWindow):
             self.is_show = not self.is_show
 
     # Переопределение метода closeEvent, для перехвата события закрытия окна
-    # Окно будет закрываться только в том случае, если нет галочки в чек-боксе
     def closeEvent(self, event):
         # if self.check_box.isChecked():
             event.ignore()
@@ -92,6 +79,5 @@ def qt_start(queue):
     mw = MainWindow(queue)
     # mw.queue = queue
 
-    # mw.show()
     # системный выход с кодом, который вернет app.exec()
     sys.exit(app.exec())
