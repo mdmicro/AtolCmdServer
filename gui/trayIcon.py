@@ -1,26 +1,34 @@
+import json
 import sys
-
+import threading
+from logging import exception
+import queue
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QGridLayout, QWidget, QCheckBox, QSystemTrayIcon, \
-    QMenu, QAction, qApp
+    QMenu, QAction, qApp, QPushButton
 from PyQt5.QtCore import QSize
-
+from atol import Atol, InfoCmdResponse
 from named_tuple import msgConnect
 
-
 class MainWindow(QMainWindow):
-    """
-        Объявление чекбокса и иконки системного трея.
-        Инициализироваться будут в конструкторе.
-    """
     # check_box = None
     tray_icon = None
     is_show = False
     queue = None
+    atol_info: InfoCmdResponse = None
 
-    # Переопределяем конструктор класса
+    def get_msg_thread(self):
+        while True:
+            try:
+                self.atol_info  = self.queue.get(block=True, timeout=10)
+                if self.atol_info:
+                    self.tray_icon.setIcon(QIcon("icon\cashRegister.png"))
+
+            except queue.Empty:
+                self.tray_icon.setIcon(QIcon("icon\cashRegisterBW.png"))
+                continue
+
     def __init__(self, queue):
-        # Обязательно нужно вызвать метод супер класса
         QMainWindow.__init__(self)
 
         # Добавляем чекбокс, от которого будет зависеть поведение программы при закрытии окна
@@ -36,17 +44,15 @@ class MainWindow(QMainWindow):
 
         # Инициализируем QSystemTrayIcon
         self.tray_icon = QSystemTrayIcon(self)
-        # self.tray_icon.setIcon(self.style().standardIcon(QStyle.SP_ComputerIcon))
-
-        if msg[0].status: # todo rework
-            self.tray_icon.setIcon(QIcon("icon\cashRegister.png"))
-        else:
-            self.tray_icon.setIcon(QIcon("icon\cashRegisterBW.png"))
+        self.tray_icon.setIcon(QIcon("icon\cashRegisterBW.png"))
 
         show_action = QAction("Настройки", self)
         quit_action = QAction("Выход", self)
         # hide_action = QAction("Скрыть", self)
-        show_action.triggered.connect(self.show)
+
+        # обработчик события - показать окно формы
+        show_action.triggered.connect(self.event_handler_show)
+
         # hide_action.triggered.connect(self.hide)
         quit_action.triggered.connect(qApp.quit)
         tray_menu = QMenu()
@@ -57,13 +63,36 @@ class MainWindow(QMainWindow):
         self.tray_icon.show()
         self.tray_icon.activated.connect(self.double_click)
 
+        self.queue = queue
+        thread = threading.Thread(target=self.get_msg_thread)
+        thread.start()
+
+    def event_handler_show(self):
+        self.setMinimumSize(QSize(800, 180))  # Устанавливаем размеры
+        self.setWindowTitle("Статус")  # Устанавливаем заголовок окна
+        central_widget = QWidget(self)  # Создаём центральный виджет
+        self.setCentralWidget(central_widget)  # Устанавливаем центральный виджет
+
+        grid_layout = QGridLayout(self)  # Создаём QGridLayout
+        central_widget.setLayout(grid_layout)  # Устанавливаем данное размещение в центральный виджет
+        if self.atol_info:
+            self.setMinimumSize(QSize(800, 580))  # Устанавливаем размеры
+            grid_layout.addWidget(QLabel(f"Версия ДТО: {self.atol_info.version.decode('utf-8')}", self), 0, 0)
+            grid_layout.addWidget(QLabel(f"Установки:", self), 2, 0)
+
+            settings = self.atol_info.settings
+            for index, (key, value) in enumerate(settings.items()):
+                grid_layout.addWidget(QLabel(f"{key}: {value}", self), 3 + index, 0)
+
+        self.show()
+
     def double_click(self, event):
         if event == QSystemTrayIcon.DoubleClick:
             if self.is_show:
                 self.hide()
             else:
                 # self.tray_icon.showMessage(f"{self.queue.get()}", QSystemTrayIcon.Information, 2000)
-                self.show()
+                self.event_handler_show()
             self.is_show = not self.is_show
 
     # Переопределение метода closeEvent, для перехвата события закрытия окна
@@ -76,8 +105,7 @@ class MainWindow(QMainWindow):
 
 def qt_start(queue):
     app = QApplication(sys.argv)
-    mw = MainWindow(queue)
-    # mw.queue = queue
+    MainWindow(queue)
 
     # системный выход с кодом, который вернет app.exec()
     sys.exit(app.exec())
