@@ -4,13 +4,14 @@ from collections import namedtuple
 from datetime import datetime
 from flask import Flask, request, jsonify
 from atol import Atol
+from command_cycle import cmd_atol
+from enum import AtolCmdStatus
 
 flaskApp = Flask(__name__)
 SERVER_PORT = 16732
+ATOL_URL_BASE = '/api/v2/requests'
 
 def flaskRoutes(queue):
-    cmd_responses_atol = dict()
-
     @flaskApp.route('/')
     def default():
         atol = Atol()
@@ -21,16 +22,13 @@ def flaskRoutes(queue):
             if resInit:
                 res = atol.info()
                 model = atol.getModel()
-                # fn_info = atol.getFnInfo()
 
-                # queue.put([fn_info])
-                return (f'<div>Atol Web Server started</div> '
+                return (f'<div>Atol Web Server started</div>'
                         f'<div>version: {res.version}</div>'
                         f'<div>opened: {res.isOpened}</div>'
                         f'<div><p>{res.settings}</p></div>'
                         '</br>'
                         f'<div>model KKT: {model.name}</div>'
-                        # f'<div>fnInfo: {fn_info}</div>'
                         )
             else:
                 return 'No Atol connection'
@@ -39,41 +37,8 @@ def flaskRoutes(queue):
         finally:
             atol.close()
 
-    # Инициализация драйвера, возвращает статус подключения к ККТ
-    @flaskApp.route('/init')
-    def init():
-        try:
-            atol = Atol()
-            res = 'Ok' if atol.init() else 'Not connection'
-            atol.close()
-            return res
-        except Exception:
-            return f'Error {Exception}'
-
-    # General protocol
-    @flaskApp.route('/jsonCmd', methods=['POST'])
-    def json_cmd():
-        # Получаем параметры из тела запроса
-        json_data = request.get_json()
-
-        if not json_data:
-            return jsonify({"error": "Отсутствуют данные в теле запроса"}), 400
-
-        atol = Atol()
-        try:
-            resInit = atol.init()
-            if resInit:
-                result = atol.jsonCmd(json_data)
-                return jsonify(result), 200
-            else:
-                return jsonify({"error": 'Ошибка'}), 200
-        except Exception:
-            return f'Error {Exception}'
-        finally:
-            atol.close()
-
     # Protocol Атол HTTP server
-    @flaskApp.route('/api/v2/requests', methods=['POST'])
+    @flaskApp.route(ATOL_URL_BASE, methods=['POST'])
     def v2_requests():
         # Получаем параметры из тела запроса
         res = request.get_json()
@@ -85,34 +50,10 @@ def flaskRoutes(queue):
         if not dat:
             return jsonify({"error": "Отсутствуют данные в теле запроса"}), 400
 
-        atol = Atol()
-        try:
-            res_init = atol.init()
-            if res_init:
-                result = atol.jsonCmd(dat[0], uuid)
-                print(f"Response for {uuid}")
-                print(result.data)
+        cmd_atol.put(CommandAtol(uuid=uuid, json_cmd = dat[0], status=AtolCmdStatus.WAITING, date_create=datetime.now()))
+        return jsonify(uuid), 200
 
-                data = {"results":
-                            [
-                                {
-                                    "status": "ready",
-                                    "error": {"code": 0},
-                                    "result": json.loads(result.data)
-                                }
-                            ]
-                }
-                cmd_responses_atol[uuid] = CommandResponsesAtol(data=data, date_create=datetime.now())
-
-                return jsonify(result.uuid), 200
-            else:
-                return jsonify({"data": None, "error": 'Ошибка подключения к ККТ'}), 200
-        except Exception:
-            return f'Error {Exception}'
-        finally:
-            atol.close()
-
-    @flaskApp.route('/api/v2/requests/<uuid>', methods=['GET'])
+    @flaskApp.route(f'{ATOL_URL_BASE}/<uuid>', methods=['GET'])
     def v2_get_requests(uuid):
         print(f"Received request response {uuid}")
         response = cmd_responses_atol[uuid]
@@ -180,5 +121,6 @@ def flask_start(queue):
 	#  	коды ошибок при этом в полях error.Code и error.Description.
 	#  result:  зависит от типа отправленной команды ККТ
 
+CommandAtol = namedtuple('CommandAtol', ['uuid','json_cmd', 'status', 'date_create'])
 CommandResponsesAtol = namedtuple('CommandResponsesAtol', ['data', 'date_create'])
 FormatResponseAtol = namedtuple('FormatResponseAtol', ['result', 'status', 'error'])

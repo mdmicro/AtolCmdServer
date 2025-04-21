@@ -7,9 +7,7 @@ from multiprocessing import Process, Queue
 def getAtolInfo():
     atol = Atol()
     try:
-        resInit = atol.init()
-
-        if resInit:
+        if atol.init():
             return atol.info()
         else:
             return None
@@ -20,7 +18,7 @@ def getAtolInfo():
         atol.close()
 
 if __name__ == '__main__':
-    # очередь для обмена сообщениями между process Flask и GUI Qt
+    # очередь для обмена сообщениями между process Flask и process GUI Qt
     queue = Queue()
 
     process_flask = Process(target=flask_start, args=([queue]), daemon=True)
@@ -29,9 +27,9 @@ if __name__ == '__main__':
     process_qt = Process(target=qt_start, args=([queue]), daemon=True)
     process_qt.start()
 
-    # опрос состояния Атол и отправка в очередь сообщений для gui
-    while True:
-        atolInfo = getAtolInfo()
-        if atolInfo:
-            queue.put(atolInfo)
-        time.sleep(5)
+    # периодический опрос состояния Атол и отправка в GUI для отображения
+    # while True:
+    #     atolInfo = getAtolInfo()
+    #     if atolInfo:
+    #         queue.put(atolInfo)
+    #     time.sleep(5)
